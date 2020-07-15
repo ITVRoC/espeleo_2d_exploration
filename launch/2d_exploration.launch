@@ -1,0 +1,32 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="laser_to_base" 
+    args="-0.2 0 0.2 0 0 0 base_link laser 50" />
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <rosparam>
+    maxUrange: 80.0
+    maxRange: 8
+    lstep: 0.05
+    iterations: 5
+    xmin: -100.0
+    ymin: -100.0
+    xmax: 100.0
+    ymax: 100.0
+    srr: 0.1
+    stt: 0.2
+    str: 0.1
+    delta: 0.05
+    linearUpdate: 1.0
+    angularUpdate: 0.5
+    temporalUpdate: -1.
+    map_update_interval: 5.0
+    </rosparam>
+  </node>
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base_node" output="screen">
+    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/base_local_planner_params.yaml" command="load" />
+  </node>
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find espeleo_2d_exploration)/rviz/config_exploration.rviz" />
+</launch>
