@@ -1,7 +1,6 @@
 # espeleo_2d_exploration (In development)
 2D Autonomous exploration package for EspeleoRobo. This package uses navigation stack and a LaserScanner to create a map of an unknown environment.
 
-To launch EspeleoRobo with the navigation stack configuration, run ```roscore``` and open a CoppeliaSim scene with a robot equipped with a 2D Laser Scanner publishing to the /scan topic.
 
 ### Dependencies:
 - espeleo_locomotion
@@ -9,6 +8,7 @@ To launch EspeleoRobo with the navigation stack configuration, run ```roscore```
 - move_base (https://github.com/ros-planning/navigation)
 - gmapping (https://github.com/ros-perception/slam_gmapping)
 
+To launch EspeleoRobo with the navigation stack configuration, run ```roscore``` and open a CoppeliaSim scene with a robot equipped with a 2D Laser Scanner publishing to the /scan topic.
 
 In a new terminal, run:
 ```
