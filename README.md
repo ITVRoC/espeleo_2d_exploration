@@ -14,9 +14,9 @@ In a new terminal, run:
 ```
 roslaunch espeleo_vrep_simulation espeleo_sim.launch 
 ```
-Navigate to the package root directory:
+Run the following script to publish /odom topic and correctly setup the tf tree:
 ```
-cd <path_to_catkin_ws>/src/espeleo_locomotion/script/odom.py 
+python <path_to_catkin_ws>/src/espeleo_locomotion/script/odom.py 
 ```
 In a new terminal, run:
 ```
