@@ -2,15 +2,22 @@ cmake_minimum_required(VERSION 2.8.3)
 project(espeleo_2d_exploration)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   espeleo_vrep_simulation
+  espeleo_control
   gmapping
   move_base
+  roscpp
+  tf
+  message_generation
+  geometry_msgs
+  std_msgs
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -47,11 +54,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+   FILES
+   Frontier.msg
+   FrontierArray.msg
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -68,10 +75,13 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   geometry_msgs
+   nav_msgs
+  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -105,7 +115,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES espeleo_2d_exploration
-#  CATKIN_DEPENDS espeleo_vrep_simulation gmapping move_base
+  CATKIN_DEPENDS espeleo_vrep_simulation espeleo_control gmapping move_base roscpp tf message_runtime
 #  DEPENDS system_lib
 )
 
@@ -135,7 +145,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/espeleo_2d_exploration_node.cpp)
+add_executable(frontier_publisher_node src/frontier_publisher_node.cpp)
+add_executable(distance_measurer src/measure_distance.cpp)
 
+add_dependencies(frontier_publisher_node espeleo_2d_exploration)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -147,10 +160,17 @@ add_executable(${PROJECT_NAME}_node src/espeleo_2d_exploration_node.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
- )
+)
 
+target_link_libraries(frontier_publisher_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(distance_measurer
+   ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

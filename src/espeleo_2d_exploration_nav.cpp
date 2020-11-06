@@ -3,24 +3,19 @@
 #include <chrono>
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Float32.h>
 #include <tf/transform_listener.h>
 #include "tf/transform_broadcaster.h"
 #include "tf/message_filter.h"
 #include "espeleo_2d_exploration/Frontier.h"
 #include "espeleo_2d_exploration/FrontierArray.h"
-#include "espeleo_control/Path.h"
-#include "espeleo_control/NavigatePathAction.h"
 #include "tf/transform_datatypes.h"
 #include "move_base_msgs/MoveBaseAction.h"
 #include "actionlib/client/simple_action_client.h"
 #include <cstdlib> // Needed for rand()
 #include <ctime> // Needed to seed random number generator with a time value
 
-//typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-typedef actionlib::SimpleActionClient<espeleo_control::NavigatePathAction> EspeleoControlClient;
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 typedef struct
 {
@@ -32,35 +27,32 @@ class EspeleoExploration
 {
 private:
 	sensor_msgs::PointCloud cluster_cloud;
-    geometry_msgs::PointStamped goal_point_pub;
     ros::NodeHandle nh_;
     ros::Publisher cmd_vel_pub_;
     ros::Publisher frontier_centers_pub;
-    ros::Publisher goal_pub;
     ros::Subscriber frontier_sub;
     tf::TransformListener *tfListener;
-    EspeleoControlClient ec;
+    MoveBaseClient ac;
     bool exploration_finished;
     std::string exploration_mode;
     std::chrono::time_point<std::chrono::high_resolution_clock> t_ini;
 
 public:
-    EspeleoExploration(ros::NodeHandle &nh, tf::TransformListener &list) : ec("/espeleo_control_action", true)
+    EspeleoExploration(ros::NodeHandle &nh, tf::TransformListener &list) : ac("/move_base", true)
     {
         srand(time(NULL));
         nh_ = nh;
         tfListener = &list;
-        nh_.param<std::string>("mode", exploration_mode, "largest");
+        nh_.param<std::string>("mode", exploration_mode, "closest");
         cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
         frontier_centers_pub = nh_.advertise<sensor_msgs::PointCloud>("/cluster_centers", 1);
-        goal_pub = nh_.advertise<geometry_msgs::PointStamped>("/goal_point", 1);
         frontier_sub = nh_.subscribe("/frontiers", 1, &EspeleoExploration::frontierCallback, this);
         cluster_cloud.header.frame_id = "map";
         exploration_finished = false;
         t_ini = std::chrono::high_resolution_clock::now();
-        while(!ec.waitForServer(ros::Duration(5.0)))
+        while(!ac.waitForServer(ros::Duration(5.0)))
         {
-            ROS_INFO("Waiting for the espeleo_control action server to come up");            
+            ROS_INFO("Waiting for the move_base action server to come up");            
         } 
     };
 
@@ -245,31 +237,21 @@ public:
         ROS_INFO("Largest frontier has %i points", largest_frontier_size);
         ROS_INFO("Frontier index: %i", target_frontier);
 
-        espeleo_control::NavigatePathGoal goal_path;
-        goal_path.path.header.frame_id = "map";
-        geometry_msgs::Point32 goal_point;
-        goal_point.x = frontierCluster.frontiers[target_frontier].center.x;
-        goal_point.y = frontierCluster.frontiers[target_frontier].center.y;
-        goal_point.z = 0;
+		move_base_msgs::MoveBaseGoal goal;
+		goal.target_pose.header.frame_id = "map";
+		goal.target_pose.header.stamp = ros::Time::now();
+        // ROS_INFO("Frontier index: %d", frontier_i);			
+        goal.target_pose.pose.position.x = frontierCluster.frontiers[target_frontier].center.x;
+        goal.target_pose.pose.position.y = frontierCluster.frontiers[target_frontier].center.y;
+        geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(0);
+        goal.target_pose.pose.orientation = odom_quat;
+        ROS_INFO("Navigating from x: %f y: %f to: x: %f y: %f", transform.getOrigin().x(), goal.target_pose.pose.position.x, goal.target_pose.pose.position.y);
 
-        goal_path.path.path.points.push_back(goal_point);
-        std::cout << "GOAL PATH POINTS: " << goal_path.path.path.points.size() << std::endl;
-        goal_point_pub.header.frame_id = "map";
-        goal_point_pub.point.x = goal_point.x;
-        goal_point_pub.point.y = goal_point.y;
-        goal_point_pub.point.z = 0;
-        goal_pub.publish(goal_point_pub);
-
-        ROS_INFO("Navigating from x: %f y: %f to: x: %f y: %f", transform.getOrigin().x(), goal_point.x, goal_point.y);
-
-        ec.sendGoal(goal_path);
-        //ec.waitForResult(ros::Duration(10.0));
-        ec.waitForResult();
-        
-
-        if(ec.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        ac.sendGoal(goal);
+        ac.waitForResult(ros::Duration(20.0));
+        if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
         {
-            ROS_INFO("The base moved to %f,%f", goal_point.x, goal_point.y);
+            ROS_INFO("The base moved to %f,%f", goal.target_pose.pose.position.x, goal.target_pose.pose.position.y);
         }
 	};
 
@@ -278,7 +260,6 @@ public:
         ros::Rate rate(10);
         while(ros::ok())
         {
-            goal_pub.publish(goal_point_pub);
             ros::spinOnce();
             rate.sleep();
         }

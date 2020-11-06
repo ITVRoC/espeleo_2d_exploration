@@ -1,7 +1,8 @@
 <launch>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find espeleo_control)/config/general.config"/>
   <node pkg="tf" type="static_transform_publisher" name="laser_to_base" 
     args="-0.2 0 0.2 0 0 0 base_link laser 50" />
-  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping">
     <rosparam>
     maxUrange: 80.0
     maxRange: 8
@@ -14,19 +15,18 @@
     srr: 0.1
     stt: 0.2
     str: 0.1
-    delta: 0.05
-    linearUpdate: 1.0
-    angularUpdate: 0.5
+    delta: 0.075
+    linearUpdate: 0.5
+    angularUpdate: 2.0
     temporalUpdate: -1.
     map_update_interval: 5.0
     </rosparam>
   </node>
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base_node" output="screen">
-    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find espeleo_2d_exploration)/launch/nav/base_local_planner_params.yaml" command="load" />
+  <node pkg="espeleo_2d_exploration" name="closest_point.py" type="closest_point.py"/>
+  <node pkg="espeleo_control" name="espeleo_control" type="vec_field_control_action.py" args="" output="screen">
+    <rosparam command="load" file="$(find espeleo_control)/config/control_params.yaml"/>
   </node>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find espeleo_2d_exploration)/rviz/config_exploration.rviz" />
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find espeleo_2d_exploration)/rviz/config_exploration_ec.rviz" />
+  <node pkg="espeleo_2d_exploration" type="frontier_publisher_node" name="frontier_publisher_node"/>
+  <node pkg="espeleo_2d_exploration" type="distance_measurer" name="distance_measurer" output="screen"/>
 </launch>
