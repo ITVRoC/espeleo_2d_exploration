@@ -62,8 +62,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.283774018
-        Min Value: 0.237370312
+        Max Value: 0.271065027
+        Min Value: 0.223752886
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -131,6 +131,8 @@ Visualization Manager:
         map:
           Value: true
         odom:
+          Value: true
+        world:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -278,18 +280,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.64059329
-        Y: -1.04878461
-        Z: -0.645762146
+        X: 0.0498460382
+        Y: 2.75396729
+        Z: -0.649557948
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.55979633
+      Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.72675276
+      Yaw: 1.56674969
     Saved: ~
 Window Geometry:
   Displays:

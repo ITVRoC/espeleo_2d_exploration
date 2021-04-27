@@ -43,7 +43,7 @@ public:
         srand(time(NULL));
         nh_ = nh;
         tfListener = &list;
-        nh_.param<std::string>("mode", exploration_mode, "closest");
+        nh_.param<std::string>("mode", exploration_mode, "largest");
         cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
         frontier_centers_pub = nh_.advertise<sensor_msgs::PointCloud>("/cluster_centers", 1);
         frontier_sub = nh_.subscribe("/frontiers", 1, &EspeleoExploration::frontierCallback, this);

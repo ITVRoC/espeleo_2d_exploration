@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   std_msgs
   nav_msgs
+  MotionPlanner_RRT_Astar
 )
 
 ## System dependencies are found with CMake's conventions
@@ -115,7 +116,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES espeleo_2d_exploration
-  CATKIN_DEPENDS espeleo_vrep_simulation espeleo_control gmapping move_base roscpp tf message_runtime
+  CATKIN_DEPENDS espeleo_vrep_simulation espeleo_control gmapping move_base roscpp tf message_runtime MotionPlanner_RRT_Astar
 #  DEPENDS system_lib
 )
 
@@ -145,6 +146,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/espeleo_2d_exploration_node.cpp)
+add_executable(${PROJECT_NAME}_nav src/espeleo_2d_exploration_nav.cpp)
 add_executable(frontier_publisher_node src/frontier_publisher_node.cpp)
 add_executable(distance_measurer src/measure_distance.cpp)
 
@@ -161,6 +163,10 @@ add_dependencies(frontier_publisher_node espeleo_2d_exploration)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(${PROJECT_NAME}_nav
    ${catkin_LIBRARIES}
 )
 

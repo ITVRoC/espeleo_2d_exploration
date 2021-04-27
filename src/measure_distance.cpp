@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float32.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PointStamped.h>
 #include <tf/transform_listener.h>
 #include "tf/transform_broadcaster.h"
 #include "tf/message_filter.h"
@@ -20,6 +21,7 @@ class MeasureDistance
     ros::NodeHandle nh_;
     ros::Subscriber odom_sub;
     ros::Publisher distance_pub;
+    ros::Publisher position_pub;
     std_msgs::Float32 distance_msg;
     tf::TransformListener *tfListener;
     float distance_travelled;
@@ -33,8 +35,10 @@ class MeasureDistance
         tfListener = &list;
         previous_pos.x = 0;
         previous_pos.y = 0;
+        distance_travelled = 0;
         odom_sub = nh_.subscribe("/odom", 1, &MeasureDistance::odomCallback, this);
         distance_pub = nh_.advertise<std_msgs::Float32>("/distance_travelled", 1);
+        position_pub = nh_.advertise<geometry_msgs::PointStamped>("/position_point", 1);
     };
 
     float getDistance(float x1, float x2, float y1, float y2)
@@ -56,10 +60,16 @@ class MeasureDistance
         previous_pos.x = current_pos.x;
         previous_pos.y = current_pos.y;
 
+        geometry_msgs::PointStamped position;
+        position.point.x = current_pos.x;
+        position.point.y = current_pos.y;
+        position.point.z = 0;
+
         std::cout << "Distance traveled: " << distance_travelled << std::endl;
 
         distance_msg.data = distance_travelled;
         distance_pub.publish(distance_msg);
+        position_pub.publish(position);
     };
     
     void spin()

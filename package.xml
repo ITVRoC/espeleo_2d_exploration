@@ -25,6 +25,7 @@
   <build_depend>message_generation</build_depend>
   <build_depend>move_base</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>MotionPlanner_RRT_Astar</build_depend>
   <build_depend>tf</build_depend>
   <build_export_depend>espeleo_vrep_simulation</build_export_depend>
   <build_export_depend>espeleo_control</build_export_depend>
@@ -32,12 +33,14 @@
   <build_export_depend>move_base</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>tf</build_export_depend>
+  <build_export_depend>MotionPlanner_RRT_Astar</build_export_depend>
   <exec_depend>espeleo_vrep_simulation</exec_depend>
   <exec_depend>espeleo_control</exec_depend>
   <exec_depend>gmapping</exec_depend>
   <exec_depend>move_base</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>tf</exec_depend>
+  <exec_depend>MotionPlanner_RRT_Astar</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 
   <export>

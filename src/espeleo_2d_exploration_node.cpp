@@ -5,6 +5,7 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PointStamped.h>
+#include <nav_msgs/Path.h>
 #include <std_msgs/Float32.h>
 #include <tf/transform_listener.h>
 #include "tf/transform_broadcaster.h"
@@ -38,11 +39,18 @@ private:
     ros::Publisher frontier_centers_pub;
     ros::Publisher goal_pub;
     ros::Subscriber frontier_sub;
+    ros::Subscriber path_sub;
     tf::TransformListener *tfListener;
     EspeleoControlClient ec;
-    bool exploration_finished;
-    std::string exploration_mode;
     std::chrono::time_point<std::chrono::high_resolution_clock> t_ini;
+    bool exploration_finished;
+    int num_commands;
+
+    //config params
+    int min_frontier_size;
+    float spin_for;
+    std::string exploration_mode;
+    
 
 public:
     EspeleoExploration(ros::NodeHandle &nh, tf::TransformListener &list) : ec("/espeleo_control_action", true)
@@ -51,17 +59,23 @@ public:
         nh_ = nh;
         tfListener = &list;
         nh_.param<std::string>("mode", exploration_mode, "largest");
+        nh_.param<int>("min_frontier_size", min_frontier_size, 4);
+        nh_.param<float>("spin_for", spin_for, 5.0);
         cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
         frontier_centers_pub = nh_.advertise<sensor_msgs::PointCloud>("/cluster_centers", 1);
         goal_pub = nh_.advertise<geometry_msgs::PointStamped>("/goal_point", 1);
         frontier_sub = nh_.subscribe("/frontiers", 1, &EspeleoExploration::frontierCallback, this);
+        path_sub = nh_.subscribe("/final_path", 1, &EspeleoExploration::pathCallback, this);
         cluster_cloud.header.frame_id = "map";
         exploration_finished = false;
         t_ini = std::chrono::high_resolution_clock::now();
         while(!ec.waitForServer(ros::Duration(5.0)))
         {
             ROS_INFO("Waiting for the espeleo_control action server to come up");            
-        } 
+        }
+        num_commands = 0;
+        ROS_INFO("mode: %s, min_frontier_size: %i, spin_for: %f", exploration_mode, min_frontier_size, spin_for);
+        spinFor(spin_for);
     };
 
     float getDistance(float x1, float x2, float y1, float y2)
@@ -69,7 +83,20 @@ public:
 		return sqrt(pow((x1-x2), 2.) + pow((y1 - y2), 2.));
 	};
 
-    
+    void spinFor(float time)
+    {
+        geometry_msgs::Twist vel_msg;
+        vel_msg.angular.z = 1.0;
+        ros::Time beginTime = ros::Time::now();
+        ros::Duration secondsIWantToSendMessagesFor = ros::Duration(spin_for); 
+        ros::Time endTime = beginTime + secondsIWantToSendMessagesFor;
+        while(ros::Time::now() < endTime )
+        {
+        cmd_vel_pub_.publish(vel_msg);
+        //ros::Duration(0.1).sleep();
+        }
+    };
+
     espeleo_2d_exploration::FrontierArray clusterFrontiers(const espeleo_2d_exploration::FrontierArray &frontiers_in)
     {
         espeleo_2d_exploration::FrontierArray frontiers;
@@ -176,7 +203,7 @@ public:
 	{
         
         espeleo_2d_exploration::FrontierArray frontierCluster = clusterFrontiers(frontiers);
-
+        ROS_INFO("Frontier points: %i", frontiers.frontiers.size());
         if(frontierCluster.frontiers.size() == 0)
         {
             auto t_end = std::chrono::high_resolution_clock::now();
@@ -219,12 +246,12 @@ public:
 		for(int i = 0; i < frontierCluster.frontiers.size(); i++) {
 			distance = getDistance(frontierCluster.frontiers[i].center.x, transform.getOrigin().x(), frontierCluster.frontiers[i].center.y, transform.getOrigin().y());
 
-			if(distance > .8 && distance <= closest_frontier_distance) {
+			if(distance > .1 && distance <= closest_frontier_distance) {
 				closest_frontier_distance = distance;
                 second_frontier = frontier_i;
 				frontier_i = i;
 			}
-            if(distance > .8 && frontierCluster.frontiers[i].points.size() > largest_frontier_size)
+            if(distance > .1 && frontierCluster.frontiers[i].points.size() > largest_frontier_size)
             {
                 largest_frontier = i;
                 largest_frontier_size = frontierCluster.frontiers[i].points.size();
@@ -248,9 +275,10 @@ public:
         espeleo_control::NavigatePathGoal goal_path;
         goal_path.path.header.frame_id = "map";
         geometry_msgs::Point32 goal_point;
-        goal_point.x = frontierCluster.frontiers[target_frontier].center.x;
-        goal_point.y = frontierCluster.frontiers[target_frontier].center.y;
-        goal_point.z = 0;
+        goal_point = getClosestFrontierPoint(frontierCluster.frontiers[target_frontier], transform.getOrigin().x(), transform.getOrigin().y());
+        //goal_point.x = frontierCluster.frontiers[target_frontier].center.x;
+        //goal_point.y = frontierCluster.frontiers[target_frontier].center.y;
+        //goal_point.z = 0;
 
         goal_path.path.path.points.push_back(goal_point);
         std::cout << "GOAL PATH POINTS: " << goal_path.path.path.points.size() << std::endl;
@@ -262,16 +290,52 @@ public:
 
         ROS_INFO("Navigating from x: %f y: %f to: x: %f y: %f", transform.getOrigin().x(), goal_point.x, goal_point.y);
 
-        ec.sendGoal(goal_path);
+        //ec.sendGoal(goal_path);
         //ec.waitForResult(ros::Duration(10.0));
-        ec.waitForResult();
         
 
-        if(ec.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-        {
-            ROS_INFO("The base moved to %f,%f", goal_point.x, goal_point.y);
-        }
+        //if(ec.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        //{
+        //   ROS_INFO("The base moved to %f,%f", goal_point.x, goal_point.y);
+        //}
 	};
+
+    void pathCallback(const nav_msgs::Path path)
+    {
+        espeleo_control::NavigatePathGoal goalPath;
+        goalPath.path.header.frame_id = "map";
+        goalPath.path.closed_path_flag = true;
+        goalPath.path.insert_n_points = 1;
+        goalPath.path.filter_path_n_average = 0;
+        for(int i = 0; i < path.poses.size(); i++)
+        {
+            geometry_msgs::Point32 pathPoint;
+            pathPoint.x = path.poses[i].pose.position.x;
+            pathPoint.y = path.poses[i].pose.position.y;
+            pathPoint.z = 0;
+            goalPath.path.path.points.push_back(pathPoint);
+        }
+        ec.sendGoal(goalPath);
+        num_commands = num_commands + 1;
+        ROS_INFO("Sending action: %i", num_commands);
+    };
+
+    geometry_msgs::Point32 getClosestFrontierPoint(espeleo_2d_exploration::Frontier targetFrontier, float robotPoseX, float robotPoseY)
+    {
+        int index;
+        float d, x, y;
+        float closest_distance = 100000;
+        geometry_msgs::Point32 closest_point;
+        for(int i = 0; i < targetFrontier.points.size(); i++)
+        {
+            d = getDistance(targetFrontier.points[i].x, robotPoseX, targetFrontier.points[i].y, robotPoseY);
+            if(d < closest_distance) {
+				closest_distance = d;
+                closest_point = targetFrontier.points[i];
+			}
+        }
+        return closest_point;
+    };
 
     void spin()
     {

@@ -1,0 +1,8 @@
+#numero minimo de pontos para agrupar uma fronteira
+min_frontier_size: 4
+
+#quantos segundos o robo deve girar antes de iniciar a exploracao
+spin_for: 13
+
+#modo de exploracao ('largest' para maior fronteira; 'closest' para fronteira mais proxima)
+exploration_mode: closest
