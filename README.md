@@ -1,10 +1,8 @@
-# espeleo_2d_exploration (In development)
+# espeleo_2d_exploration
 2D Autonomous exploration package for EspeleoRobo. This package uses navigation stack and a LaserScanner to create a map of an unknown environment.
 
 
 ### Dependencies:
-- espeleo_locomotion
-- espeleo_vrep_simulation
 - move_base (https://github.com/ros-planning/navigation)
 - gmapping (https://github.com/ros-perception/slam_gmapping)
 
