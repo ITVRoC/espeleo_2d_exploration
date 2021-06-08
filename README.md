@@ -1,5 +1,6 @@
 # espeleo_2d_exploration
-2D Autonomous exploration package for EspeleoRobo. This package uses navigation stack and a LaserScanner to create a map of an unknown environment.
+2D Autonomous exploration package for EspeleoRobo. This package uses a Laser Scanner and Gmappping SLAM. Navigation Stack Navfn global planner is used.
+Navigation can be done either via Navigation Stack Local Planner or vector field control.
 
 
 ### Dependencies:
