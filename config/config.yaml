@@ -2,7 +2,7 @@
 min_frontier_size: 4
 
 #quantos segundos o robo deve girar antes de iniciar a exploracao
-spin_for: 13
+spin_for: 0
 
 #modo de exploracao ('largest' para maior fronteira; 'closest' para fronteira mais proxima)
-exploration_mode: closest
+exploration_mode: largest

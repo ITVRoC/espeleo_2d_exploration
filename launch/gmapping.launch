@@ -1,0 +1,26 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="laser_to_base" 
+    args="-0.0 0 0.0 0 0 0 base_link laser 50" />
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+    <rosparam>
+    maxUrange: 4.0
+    maxRange: 4.0
+    lstep: 0.05
+    iterations: 5
+    xmin: -20.0
+    ymin: -20.0
+    xmax: 20.0
+    ymax: 20.0
+    srr: 0.1
+    stt: 0.2
+    str: 0.1
+    delta: 0.1
+    linearUpdate: 1.0
+    angularUpdate: 0.05
+    particles: 80
+    temporalUpdate: -1.0
+    map_update_interval: 5.0
+    minimumScore: 0.0
+    </rosparam>
+  </node>
+</launch>

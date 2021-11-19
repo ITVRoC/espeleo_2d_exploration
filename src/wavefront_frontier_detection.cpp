@@ -71,7 +71,7 @@ vector<vector<int> > wfd(const nav_msgs::OccupancyGrid& map, int map_height, int
 				}
 				cell_states[n_cell] = FRONTIER_CLOSE_LIST;
 			}
-			if(new_frontier.size() > 2)
+			if(new_frontier.size() > 1)
 				frontiers.push_back(new_frontier);
 			
 			//ROS_INFO("WFD 4.5");
